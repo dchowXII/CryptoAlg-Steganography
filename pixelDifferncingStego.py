@@ -2,7 +2,10 @@ import math
 import numpy as np
 import binascii
 #import cv2
-
+import json from base64 
+import b64encode
+from Crypto.Cipher import AES
+from Crypto.Random import get_random_bytes
 
 '''
 // Function to begin program (needs work)
@@ -53,6 +56,17 @@ def string_to_binary(ciphertext):
     binary = bin(int.from_bytes(ciphertext.encode(), 'big'))
     return binary[:1] + binary[2:]
 
+data = binary
+key = get_random_bytes(16)
+cipher = AES.new(key, AES.MODE_CFB)
+ct_bytes = cipher.encrypt(data)
+iv = b64encode(cipher.iv).decode('utf-8')
+ct = b64encode(ct_bytes).decode('utf-8')
+result = json.dumps({'iv':iv, 'ciphertext':ct}
+print(result)
+{"iv": "VoamO23kFSOZcK1O2WiCDQ==", "ciphertext": "f8jciJ8/"}
+
+
 '''
 // Converts a string of binary digits to its string equivalent
 //
@@ -62,6 +76,15 @@ def string_to_binary(ciphertext):
 def binary_to_string(binaryCipher):
     n = int(binaryCipher, 2)
     return n.to_bytes((n.bit_length() + 7) // 8, 'big').decode()
+
+try:
+b64 = json.loads(json_input)
+iv = b64decode(b64['iv'])
+ct = b64decode(b64['ciphertext'])
+cipher = AES.new(key, AES.MODE_CFB, iv=iv)
+pt = cipher.decrypt(ct)
+print("The message was: ", pt) except ValueError, KeyError:
+print("Incorrect decryption")
 
 
 '''
