@@ -16,10 +16,13 @@
 #           If secret(msg length) = LSB(p', m) //p' is second subrange
 #               d' = p
 
+# Calculate d value
 def dValue (pixel1, pixel2):
     dval = abs(pixel1 - pixel2)
     return (dval)
     
+# Compare bits of a and b and return true if they are the same bits
+# or false if otherwise
 def compareBits(a, b, numOfBits):
     binStr_a = integerToBinaryStr(a)
     binStr_b = integerToBinaryStr(b)
@@ -30,6 +33,7 @@ def compareBits(a, b, numOfBits):
     #print(binStr_a[numOfBits:] + " " + binStr_b[numOfBits:] + " false")
     return False
 
+# Returns a string from an integer in terms of binary in 8 decimal places
 def integerToBinaryStr(i):
     if i == 0:
         return "00000000"
@@ -48,6 +52,7 @@ def integerToBinaryStr(i):
             t = "0" + t      
     return t + s
 
+# Returns the new pixel values for the insert method
 def stegano(pixel1, pixel2, d, dprime):
     if pixel1 >= pixel2 and dprime > d:
         steg1 = pixel1 + (abs(dprime - d)//2)
@@ -71,7 +76,7 @@ def stegano(pixel1, pixel2, d, dprime):
         return (steg1, steg2)
     return
 
-
+# Returns the new values after going through algorithm 
 def insertMsg (d, quantarray, n, secretmsg, p1, p2):
     secretm = int(secretmsg)
     if d >= 240:
