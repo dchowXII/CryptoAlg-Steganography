@@ -29,10 +29,6 @@ def nearest_square(num):
     while ((answer+1)**2) < num:
         answer += 1
     return answer + 1
-
-def findlsb(num, numOfBits):
-    numStr = integerToBinaryStr(num)
-    return (numStr[numOfBits:])
     
 # Compare bits of a and b and return true if they are the same bits
 # or false if otherwise. Used to find out if a and b have same lsb
@@ -109,8 +105,10 @@ def insertMsg (quantarray, secretmsg, p1, p2):
         if len(quantarray) > 2:
             mrange = quantarray[2]
             m = mrange[0]
+            print("m: " + str(m))            
         else:
-            m = quantarray[1]        
+            m = quantarray[1]  
+            print("m: " + str(m))      
 
     if m == len(secretmsg):   
         subrange = quantarray[0]
@@ -134,17 +132,34 @@ def insertMsg (quantarray, secretmsg, p1, p2):
 def extractMsg(pixel1, pixel2):
     dprime = dValue(pixel1, pixel2)
     n = nearest_square(dprime)
-    m = math.floor(math.log2(2*n))
+    quant_range = [(30, 33), (34, 41), (4,3)]
     print("Dprime: " + str(dprime))
-    print("m: " + str(m))
 
-    if dprime >= 240:
-        return findlsb(dprime, 5)
-
-    if dprime < (n**2 + n - 2**m):
-        return findlsb(dprime, m+2)
+    if dprime >= 240:        
+        numStr = integerToBinaryStr(dprime)
+        return (numStr[5:])
     else:
-        return findlsb(dprime, m+1)
+        if len(quant_range) > 2: 
+            subrange1 = quant_range[0]
+            subrange2 = quant_range[1]
+            mrange = quant_range[2]
+            m = mrange[0]
+            print(m)
+            for item in range(subrange1[0], subrange1[1]+1):            
+                if compareBits(item, dprime, m):
+                    return integerToBinaryStr(item)[m:]
+            m = mrange[1]
+            print(m)
+            for item in range(subrange2[0], subrange2[1]+1):
+                if compareBits(item, dprime, m):
+                    return integerToBinaryStr(item)[m+1:]        
+        else:
+            subrange1 = quant_range[0]
+            m = quant_range[1]
+            print(m)
+            for item in range(subrange1[0], subrange1[1]+1):
+                if compareBits(item, dprime, m):
+                    return integerToBinaryStr(item)
     return
 
 
