@@ -144,27 +144,24 @@ def extractMsg(pixel1, pixel2):
             subrange2 = quant_range[1]
             mrange = quant_range[2]
             m = mrange[0]
-            print(m)
             for item in range(subrange1[0], subrange1[1]+1):            
                 if compareBits(item, dprime, m):
                     return integerToBinaryStr(item)[m:]
             m = mrange[1]
-            print(m)
             for item in range(subrange2[0], subrange2[1]+1):
                 if compareBits(item, dprime, m):
-                    return integerToBinaryStr(item)[m+1:]        
+                    return integerToBinaryStr(item)[:m]        
         else:
             subrange1 = quant_range[0]
             m = quant_range[1]
-            print(m)
             for item in range(subrange1[0], subrange1[1]+1):
                 if compareBits(item, dprime, m):
-                    return integerToBinaryStr(item)
+                    return integerToBinaryStr(item)[m:]
     return
 
 
 quant_range = [(30, 33), (34, 41), (4,3)]
-secretmsg = "001"
+secretmsg = "0000"
 pixel1 = 47
 pixel2 = 81
 steganoPair = insertMsg(quant_range, secretmsg, pixel1, pixel2) 
