@@ -17,12 +17,25 @@
 #               d' = p
 
 # Calculate d value
+
+import math
+
 def dValue (pixel1, pixel2):
     dval = abs(pixel1 - pixel2)
     return (dval)
+
+def nearest_square(num):
+    answer = 0
+    while ((answer+1)**2) < num:
+        answer += 1
+    return answer + 1
+
+def findlsb(num, numOfBits):
+    numStr = integerToBinaryStr(num)
+    return (numStr[numOfBits:])
     
 # Compare bits of a and b and return true if they are the same bits
-# or false if otherwise
+# or false if otherwise. Used to find out if a and b have same lsb
 def compareBits(a, b, numOfBits):
     binStr_a = integerToBinaryStr(a)
     binStr_b = integerToBinaryStr(b)
@@ -50,7 +63,8 @@ def integerToBinaryStr(i):
         t = ''
         for x in range(0, end):         
             t = "0" + t      
-    return t + s
+        return t + s
+    return s
 
 # Returns the new pixel values for the insert method
 def stegano(pixel1, pixel2, d, dprime):
@@ -60,7 +74,7 @@ def stegano(pixel1, pixel2, d, dprime):
         #print("if statement 1")
         return (steg1, steg2)
     if pixel1 < pixel2 and dprime > d:
-        steg1 = pixel1 - (abs(dprime - d)//2)
+        steg1 = pixel1 - math.ceil((abs(dprime - d)/2))
         steg2 = pixel2 + (abs(dprime - d)//2)
         #print("if statement 2")
         return (steg1, steg2)
@@ -77,12 +91,19 @@ def stegano(pixel1, pixel2, d, dprime):
     return
 
 # Returns the new values after going through algorithm 
-def insertMsg (d, quantarray, n, secretmsg, p1, p2):
+def insertMsg (quantarray, secretmsg, p1, p2):
+    d = dValue(pixel1, pixel2)
+    n = nearest_square(d)
     secretm = int(secretmsg)
+
+    print("D: " + str(d))
+    print("n: " + str(n))
+    print("Secret msg: " + secretmsg)
+
     if d >= 240:
         dprime = secretm & d
         print("D value is bigger than 240. dprime: " + dprime)
-        return stegano(p1, p2, dorg, dprime)
+        return stegano(p1, p2, d, dprime)
     
     if d < 240:
         if len(quantarray) > 2:
@@ -98,7 +119,7 @@ def insertMsg (d, quantarray, n, secretmsg, p1, p2):
             if compareBits(item, secretm, 4):
                 dprime = item
                 print("subrange 1 used. dprime: " + str(dprime))
-                return stegano(p1, p2, dorg, dprime)
+                return stegano(p1, p2, d, dprime)
     else:
         subrange = quantarray[1]
         for item in range(subrange[0], subrange[1]+1): 
@@ -106,19 +127,31 @@ def insertMsg (d, quantarray, n, secretmsg, p1, p2):
             if compareBits(item, secretm, 5):
                 dprime = item
                 print("subrange 2 used. dprime: " + str(dprime))
-                return stegano(p1, p2, dorg, dprime)
+                return stegano(p1, p2, d, dprime)
     return -1
 
+# Used to extract message from encrypted pixels
+def extractMsg(pixel1, pixel2):
+    dprime = dValue(pixel1, pixel2)
+    n = nearest_square(dprime)
+    m = math.floor(math.log2(2*n))
+    print("Dprime: " + str(dprime))
+    print("m: " + str(m))
+
+    if dprime >= 240:
+        return findlsb(dprime, 5)
+
+    if dprime < (n**2 + n - 2**m):
+        return findlsb(dprime, m+2)
+    else:
+        return findlsb(dprime, m+1)
+    return
+
+
 quant_range = [(30, 33), (34, 41), (4,3)]
-#quant_range = [(30, 33), 4]
-n = 6
 secretmsg = "001"
 pixel1 = 47
 pixel2 = 81
-dorg = dValue(pixel1, pixel2)
-print("D: " + str(dorg))
-print("n: " + str(n))
-print("Secret msg: " + secretmsg)
-#compareBits(32, 0, 4)
-dprime = insertMsg(dorg, quant_range, n, secretmsg, pixel1, pixel2) 
-print("New pair of pixels: " + str(dprime))
+steganoPair = insertMsg(quant_range, secretmsg, pixel1, pixel2) 
+print("New pair of pixels: " + str(steganoPair))
+print("Secret msg: " + str(extractMsg(steganoPair[0], steganoPair[1])))
