@@ -36,7 +36,14 @@ def binary_to_string(binaryCipher):
     n = int(binaryCipher, 2)
     return n.to_bytes((n.bit_length() + 7) // 8, 'big').decode()
 
-
+'''
+// Takes absolute difference of two numbers. Used to find diff in pixel vals
+//
+// @param   pixel1  First integer   
+// @param   pixel2  Second integer    
+//
+// @return  dval Absolute difference of two pixel vals
+'''
 def dValue(pixel1, pixel2):
     dval = abs(pixel1 - pixel2)
     return (dval)
@@ -52,7 +59,13 @@ def nearest_square(num):
     answer = 0
     while ((answer+1)**2) < num:
         answer += 1
-    return answer + 1
+    diff1 = abs(num - answer**2)
+    diff2 = abs(num - (answer+1)**2)
+    if diff2 < diff1:
+        answer += 1
+    if diff2 - diff1 == 1:
+        answer += 1
+    return answer
 
 
 '''
@@ -124,37 +137,44 @@ def insert_msg(img_name, message_as_bits):
     x, y = im.size
     last_row = 0
     last_col = 0
-    for col in range(y):
-        for row in range(0, x - 1, 2):
+    for col in range(0, y - 1, 2):
+        for row in range(x):
             if message_len > 0:
                 pixel1 = list(im.getpixel((row, col)))
-                pixel2 = list(im.getpixel((row + 1, col)))
+                pixel2 = list(im.getpixel((row, col + 1)))
                 for k in range(3):
                     if message_len > 0:
                         # Calculate differences in adjacent pixel colors
                         p1 = pixel1[k]
                         p2 = pixel2[k]
                         d = dValue(p1, p2)
-
+                        print("d: " + str(d))
                         # Find quantization ranges for pixel differences
                         quant_ranges = find_quant_range(d)
+                        print("quant ranges: " + str(quant_ranges))
                         n = nearest_square(d)
                         m = quant_ranges[2][0] if len(quant_ranges) > 2 else quant_ranges[1]
-
+                        print("m: " + str(m))
                         # Get next m bits of secret message and convert to decimal
                         message_to_hide = ""
                         if message_len >= m:
                             message_to_hide = message_as_bits[message_len - m: message_len]
                         else:
-                            message_to_hide = message_as_bits[message_len - message_len: message_len]
+                            message_to_hide = message_as_bits[0: message_len]
                         message_to_hide = int(message_to_hide, 2)
-
+                        print("message to hide: " + str(message_to_hide))
                         # Initialize dprime
-                        dprime = 0
+                        dprime = -1
 
                         if d >= 240:
                             dprime = message_to_hide & 240
+                            print("dprime: " + str(dprime))
+                            print("d: " + str(d))
+                            print("p1: " + str(p1))
+                            print("p2: " + str(p2))
                             pixel_vals = stegano(p1, p2, d, dprime)
+                            print("k: " + str(k))
+                            print("new pixel_vals: " + str(pixel_vals))
                             pixel1[k] = pixel_vals[0]
                             pixel2[k] = pixel_vals[1]
                         # Must find dprime
@@ -165,42 +185,73 @@ def insert_msg(img_name, message_as_bits):
                             if len(quant_ranges) > 2:
                                 # Must loop through values p in the first sub range to find a pi whose m+1 LSBs = m+1 bits of Secret message
                                 for l in range(num1, num2 + 1):
-                                    if l & message_to_hide == message_to_hide:
+                                    print("l: " + str(l))
+                                    print("message_to_hide: " + str(message_to_hide))
+                                    if get_last_m_bits(l, m) == get_last_m_bits(message_to_hide, m):
                                         dprime = l
+                                        print("dprime: " + str(dprime))
+                                        print("d: " + str(d))
+                                        print("p1: " + str(p1))
+                                        print("p2: " + str(p2))
                                         pixel_vals = stegano(p1, p2, d, dprime)
+                                        print("k: " + str(k))
+                                        print("new pixel_vals: " + str(pixel_vals))
                                         pixel1[k] = pixel_vals[0]
                                         pixel2[k] = pixel_vals[1]
+                                        break
                                 # dprime was not found in first range, so check second range
-                                if dprime == 0:
+                                if dprime == -1:
                                     # We now use the other m value
                                     m = quant_ranges[2][1]
-                                    message_to_hide = message_as_bits[message_len - m: message_len]
+                                    start_index = message_len - m
+                                    if start_index < 0:
+                                        start_index = 0
+                                    message_to_hide = message_as_bits[start_index: message_len]
                                     message_to_hide = int(message_to_hide, 2)
                                     quant_range = quant_ranges[1]
                                     num1 = quant_range[0]
                                     num2 = quant_range[1]
                                     for l in range(num1, num2 + 1):
-                                        if l & message_to_hide == message_to_hide:
+                                        if get_last_m_bits(l, m) == get_last_m_bits(message_to_hide, m):
                                             dprime = l
+                                            print("dprime: " + str(dprime))
+                                            print("d: " + str(d))
+                                            print("p1: " + str(p1))
+                                            print("p2: " + str(p2))
                                             pixel_vals = stegano(p1, p2, d, dprime)
+                                            print("k: " + str(k))
+                                            print("new pixel_vals: " + str(pixel_vals))
                                             pixel1[k] = pixel_vals[0]
                                             pixel2[k] = pixel_vals[1]
+                                            break
                             else:
                                 # Must loop through values p in the only sub range to find a pi whose m LSBs == m bits of Secret message
                                 for l in range(num1, num2 + 1):
-                                    if l & message_to_hide == message_to_hide:
+                                    if get_last_m_bits(l, m) == get_last_m_bits(message_to_hide, m):
                                         dprime = l
+                                        print("dprime: " + str(dprime))
+                                        print("d: " + str(d))
+                                        print("p1: " + str(p1))
+                                        print("p2: " + str(p2))
                                         pixel_vals = stegano(p1, p2, d, dprime)
+                                        print("k: " + str(k))
+                                        print("new pixel_vals: " + str(pixel_vals))
                                         pixel1[k] = pixel_vals[0]
                                         pixel2[k] = pixel_vals[1]
+                                        break
                         # Confirms that m bits have been successfully hidden
                         message_len -= m
+                        print("Message left to hide: " + str(message_len))
+                        print("----------------------------")
                 # Insert new pixel values
                 im.putpixel((row, col), tuple(pixel1))
+                print("INSERTED NEW PIXEL " + str(pixel1) + " AT ROW " + str(row) + " AND COL " + str(col))
                 im.putpixel((row, col + 1), tuple(pixel2))
+                print("INSERTED 2ND NEW PIXEL " + str(pixel2) + " AT ROW " + str(row) + " AND COL " + str(col + 1))
                 # Update location of last insert
-                last_row = row + 1
-                last_col = col
+                last_row = row
+                last_col = col + 1
+    im.save("COLORFUL-NIGHT.png")
     return last_row, last_col
 
 
@@ -231,28 +282,37 @@ def extract_msg(img_name, end_pixel):
     last_row = end_pixel[0]
     last_col = end_pixel[1]
     extracted_msg = ""
-    for col in range(last_col+1):
-        for row in range(0, last_row+1, 2):
+    print("------------EXTRACTION-------------")
+    for col in range(0, last_col+1, 2):
+        for row in range(last_row+1):
                 pixel1 = im.getpixel((row, col))
-                pixel2 = im.getpixel((row + 1, col))
+                pixel2 = im.getpixel((row, col + 1))
                 for k in range(3):
                     # Calculate differences in adjacent pixel colors
                     p1 = pixel1[k]
                     p2 = pixel2[k]
                     d = dValue(p1, p2)
+                    print("d: " + str(d))
 
                     # Find quantization ranges for pixel differences
                     quant_ranges = find_quant_range(d)
                     m = quant_ranges[2][0] if len(quant_ranges) > 2 else quant_ranges[1]
+                    print("quant ranges: " + str(quant_ranges))
+                    print("m: " + str(m))
 
                     # Initialize d
                     dprime = 0
 
                     if d >= 240:
                         # Converts integer to binary string
+                        print("d: " + str(dprime))
+
                         dprime = "{0:b}".format(d)
+                        print("dprime as bits: " + str(dprime))
+
                         length = len(dprime)
                         extracted_msg = dprime[length - 4: length] + extracted_msg
+                        print(extracted_msg)
                     # Must find dprime
                     else:
                         quant_range = quant_ranges[0]
@@ -262,11 +322,17 @@ def extract_msg(img_name, end_pixel):
                             # Must loop through values p in the first sub range to find a pi whose m+1 LSBs = m+1 bits of Secret message
                             val = get_last_m_bits(d, m)
                             for l in range(num1, num2 + 1):
-                                if l & val == val:
+                                if get_last_m_bits(l, m) == get_last_m_bits(val, m):
                                     dprime = l
+                                    print("dprime: " + str(dprime))
+
                                     dprime = "{0:b}".format(dprime)
+                                    print("dprime as bits: " + str(dprime))
+
                                     length = len(dprime)
                                     extracted_msg = dprime[length - m: length] + extracted_msg
+                                    print(extracted_msg)
+                                    break
                             # dprime was not found in first range, so check second range
                             if dprime == 0:
                                 # We now use the other m value
@@ -276,24 +342,39 @@ def extract_msg(img_name, end_pixel):
                                 num2 = quant_range[1]
                                 val = get_last_m_bits(d, m)
                                 for l in range(num1, num2 + 1):
-                                    if l & val == val:
+                                    if get_last_m_bits(l, m) == get_last_m_bits(val, m):
                                         dprime = l
+                                        print("dprime: " + str(dprime))
+
                                         dprime = "{0:b}".format(dprime)
+                                        print("dprime as bits: " + str(dprime))
+
                                         length = len(dprime)
                                         extracted_msg = dprime[length - m: length] + extracted_msg
+                                        print(extracted_msg)
+                                        break
                         else:
                             # Must loop through values p in the only sub range to find a pi whose m LSBs == m bits of d
                             val = get_last_m_bits(d, m)
                             for l in range(num1, num2 + 1):
-                                if l & val == val:
+                                if get_last_m_bits(l, m) == get_last_m_bits(val, m):
                                     dprime = l
+                                    print("dprime: " + str(dprime))
+
                                     dprime = "{0:b}".format(dprime)
+                                    print("dprime as bits: " + str(dprime))
+
                                     length = len(dprime)
                                     extracted_msg = dprime[length - m: length] + extracted_msg
+                                    print(extracted_msg)
+                                    break
+                    print("k: " + str(k))
+                    print("----------------------")
     return extracted_msg
 
-print(string_to_binary("hello"))
-binary = string_to_binary("hello")
-pixel_loc = insert_msg("../city.png", binary)
+print(string_to_binary("Cryptography is awesome!"))
+print(get_last_m_bits(9, 2) == get_last_m_bits(5,2))
+binary = string_to_binary("Cryptography is awesome!")
+pixel_loc = insert_msg("../COLORFUL-NIGHT.png", binary)
 
-print(extract_msg("../city.png", pixel_loc))
+print(binary_to_string(extract_msg("COLORFUL-NIGHT.png", pixel_loc)))
