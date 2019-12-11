@@ -170,6 +170,34 @@ def stegano(pixel1, pixel2, d, dprime):
 
 
 '''
+// Fixes issue with pixel values coming back as 0 or negative sometimes.
+// This issue was not mentioned the paper, so this is my best solution.
+'''
+def verify(pixel_vals):
+    pix1 = pixel_vals[0]
+    pix2 = pixel_vals[1]
+
+    # Checking for pixel value of 0
+    if pix1 == 0:
+        pix1 = 1
+        pix2 += 1
+    elif pix2 == 0:
+        pix2 = 1
+        pix1 += 1
+
+    # Checking for negative pixel values
+    if pix1 < 0:
+        addPix2 = 0 - pix1 - 1
+        pix2 = pix2 + addPix2
+        pix1 = 1
+    elif pix2 < 0:
+        addPix1 = 0 - pix2 - 1
+        pix1 = pix1 + addPix1
+        pix2 = 1
+    return pix1, pix2
+
+
+'''
 // Takes a secret message as a binary string and hides it in the specified image
 // 
 // @param   img_name   Relative file path to image
@@ -215,7 +243,7 @@ def insert_msg(img_name, message_as_bits):
                             # Base case
                             if d >= 240:
                                 dprime = message_to_hide_int & 240
-                                pixel_vals = stegano(p1, p2, d, dprime)
+                                pixel_vals = verify(stegano(p1, p2, d, dprime))
                                 pixel1[k] = pixel_vals[0]
                                 pixel2[k] = pixel_vals[1]
                             # Must find dprime
@@ -232,7 +260,7 @@ def insert_msg(img_name, message_as_bits):
                                         if get_last_m_bits(l, m) == message_to_hide:
                                             found = True
                                             dprime = l
-                                            pixel_vals = stegano(p1, p2, d, dprime)
+                                            pixel_vals = verify(stegano(p1, p2, d, dprime))
                                             pixel1[k] = pixel_vals[0]
                                             pixel2[k] = pixel_vals[1]
                                         l += 1
@@ -255,7 +283,7 @@ def insert_msg(img_name, message_as_bits):
                                             if get_last_m_bits(l, m) == message_to_hide:
                                                 found = True
                                                 dprime = l
-                                                pixel_vals = stegano(p1, p2, d, dprime)
+                                                pixel_vals = verify(stegano(p1, p2, d, dprime))
                                                 pixel1[k] = pixel_vals[0]
                                                 pixel2[k] = pixel_vals[1]
                                             l += 1
@@ -267,7 +295,7 @@ def insert_msg(img_name, message_as_bits):
                                     while l in range(num1, num2 + 1) and not found:
                                         if get_last_m_bits(l, m) == message_to_hide:
                                             dprime = l
-                                            pixel_vals = stegano(p1, p2, d, dprime)
+                                            pixel_vals = verify(stegano(p1, p2, d, dprime))
                                             pixel1[k] = pixel_vals[0]
                                             pixel2[k] = pixel_vals[1]
                                             found = True
@@ -326,10 +354,10 @@ def extract_msg(img_name, end_pixel):
                     d = dValue(p1, p2)
 
                     # Find quantization ranges for pixel differences
+                    quant_ranges = find_quant_range(d)
                     if (row == last_row) and (col + 1 == last_col) and k == last_k:
                         m = last_m
                     else:
-                        quant_ranges = find_quant_range(d)
                         m = quant_ranges[2][0] if len(quant_ranges) > 2 else quant_ranges[1]
 
                     # Initialize d
@@ -396,7 +424,7 @@ binary = string_to_binary(cipher_text)
 pixel_loc = insert_msg("../COLORFUL-NIGHT.png", binary)
 print(originalText(binary_to_string(extract_msg("COLORFUL-NIGHT.png", pixel_loc)), key))
 
-plaintext = "Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!"
+plaintext = "Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!Steganography is awesome!"
 keyword = "MKONJIBHUVGHYCFT"
 key = generateKey(plaintext, keyword)
 cipher_text = cipherText(plaintext, key)
